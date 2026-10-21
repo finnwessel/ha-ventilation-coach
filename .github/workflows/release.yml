@@ -1,0 +1,23 @@
+name: Release
+
+# Push a tag like v0.1.0 → GitHub release that HACS installs from.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check manifest version matches tag
+        run: |
+          manifest=$(jq -r .version custom_components/ventilation_coach/manifest.json)
+          test "v$manifest" = "${GITHUB_REF_NAME}" || { echo "manifest $manifest != tag ${GITHUB_REF_NAME}"; exit 1; }
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
