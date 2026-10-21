@@ -45,6 +45,13 @@ ENTITY_KEYS = (
 )
 
 
+def _filter(domain: str, *device_classes: str) -> selector.EntityFilterSelectorConfig:
+    """Entity filter by domain and device classes (plain strings for the schema)."""
+    return selector.EntityFilterSelectorConfig(
+        domain=domain, device_class=[str(device_class) for device_class in device_classes]
+    )
+
+
 def _number(minimum: float, maximum: float, step: float, unit: str | None = None) -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
@@ -68,33 +75,35 @@ def _sensors_schema(defaults: dict[str, Any]) -> dict[vol.Marker, Any]:
     return {
         vol.Required(CONF_WINDOWS, default=defaults.get(CONF_WINDOWS, [])): selector.EntitySelector(
             selector.EntitySelectorConfig(
-                domain="binary_sensor",
-                device_class=[
+                filter=_filter(
+                    "binary_sensor",
                     BinarySensorDeviceClass.WINDOW,
                     BinarySensorDeviceClass.OPENING,
                     BinarySensorDeviceClass.DOOR,
-                ],
+                ),
                 multiple=True,
             )
         ),
         vol.Required(CONF_HUMIDITY, default=defaults.get(CONF_HUMIDITY, [])): selector.EntitySelector(
             selector.EntitySelectorConfig(
-                domain="sensor", device_class=SensorDeviceClass.HUMIDITY, multiple=True
+                filter=_filter("sensor", SensorDeviceClass.HUMIDITY), multiple=True
             )
         ),
         vol.Required(
             CONF_TEMPERATURE, default=defaults.get(CONF_TEMPERATURE, [])
         ): selector.EntitySelector(
             selector.EntitySelectorConfig(
-                domain="sensor", device_class=SensorDeviceClass.TEMPERATURE, multiple=True
+                filter=_filter("sensor", SensorDeviceClass.TEMPERATURE), multiple=True
             )
         ),
-        opt(CONF_WEATHER): selector.EntitySelector(selector.EntitySelectorConfig(domain="weather")),
+        opt(CONF_WEATHER): selector.EntitySelector(
+            selector.EntitySelectorConfig(filter=selector.EntityFilterSelectorConfig(domain="weather"))
+        ),
         opt(CONF_OUTDOOR_DEW_POINT): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", device_class=SensorDeviceClass.TEMPERATURE)
+            selector.EntitySelectorConfig(filter=_filter("sensor", SensorDeviceClass.TEMPERATURE))
         ),
         opt(CONF_OUTDOOR_TEMPERATURE): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", device_class=SensorDeviceClass.TEMPERATURE)
+            selector.EntitySelectorConfig(filter=_filter("sensor", SensorDeviceClass.TEMPERATURE))
         ),
     }
 
