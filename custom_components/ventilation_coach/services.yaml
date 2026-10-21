@@ -1,0 +1,40 @@
+set_time_constant:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: ventilation_coach
+    time_constant:
+      required: true
+      selector:
+        number:
+          min: 5
+          max: 300
+          step: 1
+          unit_of_measurement: min
+          mode: box
+    runs:
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 1
+          mode: box
+
+reset_learning:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: ventilation_coach
+    time_constant:
+      default: 60
+      selector:
+        number:
+          min: 5
+          max: 300
+          step: 1
+          unit_of_measurement: min
+          mode: box

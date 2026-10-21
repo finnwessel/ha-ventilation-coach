@@ -1,0 +1,184 @@
+# Notifications for Ventilation Coach – replaces the notification part of
+# "Lüften Live-Update". All logic lives in the integration; this automation
+# only shows it: live update while airing, "close now" signal, reminder and
+# summary after learning.
+#
+# Adjust `zonen` (status sensors of your zones) and `empfaenger`.
+alias: Lüften Benachrichtigungen
+description: Live-Update, Signal, Erinnerung und Bilanz aus Ventilation Coach.
+mode: queued
+max: 10
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.wohnbereich_status
+      - sensor.schlafzimmer_status
+    to: null
+    id: status
+  - trigger: time_pattern
+    minutes: /1
+    id: tick
+  - trigger: event
+    event_type: ventilation_coach_close_now
+    id: close_now
+  - trigger: event
+    event_type: ventilation_coach_reminder
+    id: reminder
+  - trigger: event
+    event_type: ventilation_coach_finished
+    id: finished
+variables:
+  zonen:
+    - sensor.wohnbereich_status
+    - sensor.schlafzimmer_status
+  empfaenger:
+    - person: person.finn
+      notify: notify.mobile_app_pixel_7
+    - person: person.kaya
+      notify: notify.mobile_app_kayas_a54
+  gruende:
+    air_exchanged: Luft ist ausgetauscht
+    room_cooling: Raum kühlt aus
+    humidity_stalled: Feuchte sinkt kaum noch
+    time_reached: Lüftzeit erreicht
+  hinweise:
+    humid_outside: draußen feucht, bringt kaum etwas
+    slow_exchange: Luftaustausch langsam – Fenster ganz öffnen
+  aktiv: "{{ zonen | select('is_state', ['airing', 'close_now']) | list }}"
+  laufend: "{{ zonen | select('is_state', 'airing') | list }}"
+  ruhe: "{{ is_state('input_boolean.nachtruhe_aktiv', 'on') }}"
+  live:
+    title: >-
+      {% if laufend %}🪟 Lüften · {{ laufend | map('state_attr', 'zone') | join(', ') }}{% else %}✅ Jetzt schließen{% endif %}
+    message: >-
+      {% for z in aktiv %}{% set a = states[z].attributes %}{{ a.zone }}: {% if a.hint %}{{ a.humidity_start | round(0) | int }} % · {{ hinweise[a.hint] }}{% else %}{{ a.humidity_start | round(0) | int }} → {{ a.humidity | float(0) | round(0) | int }} % · erwartet ≈ {{ a.humidity_expected | round(0) | int }} %{% if a.learning %} (lernt noch){% endif %}{% endif %}{% if a.reason %} · ✓ {{ gruende[a.reason] }}{% endif %}{% if not loop.last %}
+      {% endif %}{% endfor %}
+    data:
+      tag: lueften_live
+      channel: Lüften
+      sticky: true
+      alert_once: true
+      live_update: true
+      importance: default
+      color: "{{ '#00ACC1' if laufend else '#43A047' }}"
+      notification_icon: "{{ 'mdi:window-open-variant' if laufend else 'mdi:window-closed-variant' }}"
+      notification_icon_color: "{{ '#00ACC1' if laufend else '#43A047' }}"
+      chronometer: "{{ laufend | count > 0 }}"
+      when: >-
+        {{ (laufend | map('state_attr', 'ends') | map('as_timestamp') | max | int) if laufend else now().timestamp() | int }}
+      critical_text: >-
+        {% if laufend %}noch {{ [1, (((laufend | map('state_attr', 'ends') | map('as_timestamp') | max) - now().timestamp()) / 60) | round(0, 'ceil') | int] | max }} Min{% else %}Schließen{% endif %}
+      progress: "{{ (laufend | map('state_attr', 'progress') | min) if laufend else 100 }}"
+      progress_max: 100
+actions:
+  - choose:
+      # Live update while any zone is airing; clear it when all are done.
+      - conditions:
+          - condition: trigger
+            id: [status, tick]
+        sequence:
+          - if: "{{ aktiv | count > 0 }}"
+            then:
+              - repeat:
+                  for_each: "{{ empfaenger }}"
+                  sequence:
+                    - if: "{{ is_state(repeat.item.person, 'home') }}"
+                      then:
+                        - action: "{{ repeat.item.notify }}"
+                          continue_on_error: true
+                          data: "{{ live }}"
+            else:
+              - if:
+                  - condition: trigger
+                    id: status
+                then:
+                  - repeat:
+                      for_each: "{{ empfaenger }}"
+                      sequence:
+                        - action: "{{ repeat.item.notify }}"
+                          continue_on_error: true
+                          data:
+                            message: clear_notification
+                            data:
+                              tag: lueften_live
+                        - action: "{{ repeat.item.notify }}"
+                          continue_on_error: true
+                          data:
+                            message: clear_notification
+                            data:
+                              tag: lueften_fertig
+
+      # Signal "close now" (not during quiet hours).
+      - conditions:
+          - condition: trigger
+            id: close_now
+          - "{{ not ruhe }}"
+        sequence:
+          - repeat:
+              for_each: "{{ empfaenger }}"
+              sequence:
+                - if: "{{ is_state(repeat.item.person, 'home') }}"
+                  then:
+                    - action: "{{ repeat.item.notify }}"
+                      continue_on_error: true
+                      data:
+                        title: "🪟 Jetzt schließen: {{ trigger.event.data.zone }}"
+                        message: >-
+                          {{ gruende[trigger.event.data.reason] }}
+                          ({{ trigger.event.data.humidity_start | round(0) | int }} → {{ trigger.event.data.humidity | float(0) | round(0) | int }} %)
+                        data:
+                          tag: lueften_fertig
+                          channel: Lüften Signal
+                          importance: high
+                          color: "#43A047"
+                          notification_icon: mdi:window-closed-variant
+                          timeout: 1800
+
+      # One reminder if still open.
+      - conditions:
+          - condition: trigger
+            id: reminder
+          - "{{ not ruhe }}"
+        sequence:
+          - repeat:
+              for_each: "{{ empfaenger }}"
+              sequence:
+                - if: "{{ is_state(repeat.item.person, 'home') }}"
+                  then:
+                    - action: "{{ repeat.item.notify }}"
+                      continue_on_error: true
+                      data:
+                        title: "🪟 Noch offen: {{ trigger.event.data.zone }}"
+                        message: Lüften ist seit 10 Min vorbei – bitte schließen, sonst kühlt der Raum aus.
+                        data:
+                          tag: lueften_fertig
+                          channel: Lüften Signal
+                          importance: high
+                          color: "#FB8C00"
+                          notification_icon: mdi:window-open-variant
+                          timeout: 1800
+
+      # Summary after settling, only for a noticeable drop.
+      - conditions:
+          - condition: trigger
+            id: finished
+          - "{{ trigger.event.data.humidity_start - trigger.event.data.humidity_min >= 2 }}"
+        sequence:
+          - repeat:
+              for_each: "{{ empfaenger }}"
+              sequence:
+                - if: "{{ is_state(repeat.item.person, 'home') }}"
+                  then:
+                    - action: "{{ repeat.item.notify }}"
+                      continue_on_error: true
+                      data:
+                        title: "🪟 Gelüftet: {{ trigger.event.data.minutes }} Min"
+                        message: >-
+                          {{ trigger.event.data.zone }}: {{ trigger.event.data.humidity_start | round(0) | int }} → {{ trigger.event.data.humidity_min | round(0) | int }} %{% if trigger.event.data.learned %} (Modell ≈ {{ trigger.event.data.humidity_model | round(0) | int }} %){% endif %}
+                        data:
+                          tag: lueften_live
+                          channel: Lüften
+                          importance: low
+                          color: "#43A047"
+                          notification_icon: mdi:window-closed-variant
+                          timeout: 600

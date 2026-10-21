@@ -1,0 +1,33 @@
+{
+  "entity": {
+    "sensor": {
+      "status": {
+        "default": "mdi:window-closed-variant",
+        "state": {
+          "airing": "mdi:window-open-variant",
+          "close_now": "mdi:window-open-variant",
+          "settling": "mdi:timer-sand"
+        }
+      },
+      "humidity_gap": { "default": "mdi:water-minus" },
+      "airing_duration": { "default": "mdi:timer-outline" },
+      "airing_end": { "default": "mdi:timer-check-outline" },
+      "last_airing": { "default": "mdi:history" },
+      "time_constant": { "default": "mdi:chart-bell-curve-cumulative" }
+    },
+    "binary_sensor": {
+      "close_now": {
+        "default": "mdi:window-closed-variant",
+        "state": { "on": "mdi:window-open-variant" }
+      },
+      "airing_worthwhile": {
+        "default": "mdi:weather-windy-variant",
+        "state": { "on": "mdi:weather-windy" }
+      }
+    }
+  },
+  "services": {
+    "set_time_constant": { "service": "mdi:tune-variant" },
+    "reset_learning": { "service": "mdi:restore" }
+  }
+}

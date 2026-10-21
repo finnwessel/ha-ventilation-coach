@@ -1,0 +1,13 @@
+{
+  "domain": "ventilation_coach",
+  "name": "Ventilation Coach",
+  "codeowners": ["@finnwessel"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/finnwessel/ha-ventilation-coach",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/finnwessel/ha-ventilation-coach/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

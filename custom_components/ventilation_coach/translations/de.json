@@ -1,0 +1,208 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Neue Lüftungszone",
+        "description": "Fasse alle Räume, die sich ein Luftvolumen teilen, zu einer Zone zusammen.",
+        "data": {
+          "name": "Name der Zone",
+          "windows": "Fensterkontakte",
+          "humidity_sensors": "Feuchtesensoren",
+          "temperature_sensors": "Temperatursensoren",
+          "weather": "Wetter-Entität",
+          "outdoor_dew_point_sensor": "Außen-Taupunkt-Sensor (optional)",
+          "outdoor_temperature_sensor": "Außentemperatur-Sensor (optional)",
+          "initial_time_constant": "Start-Zeitkonstante",
+          "initial_runs": "Bisherige Lernläufe"
+        },
+        "data_description": {
+          "name": "Eine Zone ist ein zusammenhängendes Luftvolumen, z. B. Wohnzimmer mit offener Küche.",
+          "windows": "Alle Fenster der Zone. Innentüren weglassen.",
+          "humidity_sensors": "Alle Feuchtesensoren der Zone; sie werden gemittelt.",
+          "temperature_sensors": "Alle Temperatursensoren der Zone; sie werden gemittelt.",
+          "weather": "Liefert Außen-Taupunkt und -temperatur.",
+          "outdoor_dew_point_sensor": "Ersetzt den Taupunkt der Wetter-Entität.",
+          "outdoor_temperature_sensor": "Ersetzt die Temperatur der Wetter-Entität.",
+          "initial_time_constant": "Wie schnell die Luft ausgetauscht wird (Minuten). Aus einem bestehenden Setup übernehmen oder 60 lassen.",
+          "initial_runs": "Auf wie vielen Lüftungen die Start-Zeitkonstante beruht (bestimmt das Lerngewicht)."
+        }
+      }
+    },
+    "error": {
+      "no_windows": "Mindestens einen Fensterkontakt auswählen.",
+      "no_humidity": "Mindestens einen Feuchtesensor auswählen.",
+      "no_temperature": "Mindestens einen Temperatursensor auswählen.",
+      "no_outdoor": "Eine Wetter-Entität oder einen Außen-Taupunkt-Sensor auswählen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zoneneinstellungen",
+        "data": {
+          "windows": "Fensterkontakte",
+          "humidity_sensors": "Feuchtesensoren",
+          "temperature_sensors": "Temperatursensoren",
+          "weather": "Wetter-Entität",
+          "outdoor_dew_point_sensor": "Außen-Taupunkt-Sensor (optional)",
+          "outdoor_temperature_sensor": "Außentemperatur-Sensor (optional)",
+          "open_delay": "Öffnungsverzögerung",
+          "min_gap": "Mindestabstand Feuchte",
+          "marginal_rate": "Stopp unter Abfallrate",
+          "min_gap_fraction": "Mindestanteil des Abstands",
+          "spike_delta": "Ausreißerschutz",
+          "reminder_after": "Erinnerung nach",
+          "settle_max": "Nachlauf (max.)",
+          "cooldown": "Pause nach dem Lüften"
+        },
+        "data_description": {
+          "windows": "Alle Fenster der Zone. Innentüren weglassen.",
+          "humidity_sensors": "Alle Feuchtesensoren der Zone; sie werden gemittelt.",
+          "temperature_sensors": "Alle Temperatursensoren der Zone; sie werden gemittelt.",
+          "weather": "Liefert Außen-Taupunkt und -temperatur.",
+          "outdoor_dew_point_sensor": "Ersetzt den Taupunkt der Wetter-Entität.",
+          "outdoor_temperature_sensor": "Ersetzt die Temperatur der Wetter-Entität.",
+          "open_delay": "So lange muss ein Fenster offen sein, bevor das Lüften startet.",
+          "min_gap": "Unter diesem Abstand zur Gleichgewichtsfeuchte bringt Lüften nur Frischluft (5 Min).",
+          "marginal_rate": "Lüften endet, wenn der erwartete Abfall unter diese Punkte pro Minute fällt.",
+          "min_gap_fraction": "Mindestens lüften, bis dieser Anteil des Abstands geschlossen ist (0,2 = 20 %).",
+          "spike_delta": "Feuchtesensor ignorieren, der so weit über dem trockensten liegt (z. B. beim Kochen). 0 = aus.",
+          "reminder_after": "Erinnerungs-Event, wenn Fenster so lange nach „Jetzt schließen“ noch offen sind.",
+          "settle_max": "Nach dem Schließen auf die erste Feuchtemeldung warten, höchstens so lange, dann lernen.",
+          "cooldown": "„Lüften lohnt sich“ bleibt so lange nach dem Lüften aus."
+        }
+      }
+    },
+    "error": {
+      "no_windows": "Mindestens einen Fensterkontakt auswählen.",
+      "no_humidity": "Mindestens einen Feuchtesensor auswählen.",
+      "no_temperature": "Mindestens einen Temperatursensor auswählen.",
+      "no_outdoor": "Eine Wetter-Entität oder einen Außen-Taupunkt-Sensor auswählen."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "idle": "Bereit",
+          "airing": "Lüften",
+          "close_now": "Jetzt schließen",
+          "settling": "Nachlauf"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "air_exchanged": "Luft ist ausgetauscht",
+              "room_cooling": "Raum kühlt aus",
+              "humidity_stalled": "Feuchte sinkt kaum noch",
+              "time_reached": "Lüftzeit erreicht"
+            }
+          },
+          "hint": {
+            "name": "Hinweis",
+            "state": {
+              "humid_outside": "Draußen feucht, bringt kaum etwas",
+              "slow_exchange": "Luftaustausch langsam – Fenster ganz öffnen"
+            }
+          },
+          "progress": {
+            "name": "Fortschritt"
+          },
+          "open_windows": {
+            "name": "Offene Fenster"
+          },
+          "learning": {
+            "name": "Lernt noch"
+          }
+        }
+      },
+      "humidity": {
+        "name": "Luftfeuchtigkeit"
+      },
+      "equilibrium_humidity": {
+        "name": "Gleichgewichtsfeuchte"
+      },
+      "humidity_gap": {
+        "name": "Feuchteabstand"
+      },
+      "airing_duration": {
+        "name": "Lüftdauer"
+      },
+      "expected_humidity": {
+        "name": "Erwartete Feuchte"
+      },
+      "airing_end": {
+        "name": "Lüftende"
+      },
+      "last_airing": {
+        "name": "Letztes Lüften"
+      },
+      "time_constant": {
+        "name": "Zeitkonstante"
+      }
+    },
+    "binary_sensor": {
+      "close_now": {
+        "name": "Jetzt schließen",
+        "state_attributes": {
+          "reason": {
+            "name": "Grund",
+            "state": {
+              "air_exchanged": "Luft ist ausgetauscht",
+              "room_cooling": "Raum kühlt aus",
+              "humidity_stalled": "Feuchte sinkt kaum noch",
+              "time_reached": "Lüftzeit erreicht"
+            }
+          }
+        }
+      },
+      "airing_worthwhile": {
+        "name": "Lüften lohnt sich"
+      }
+    }
+  },
+  "exceptions": {
+    "zone_not_found": {
+      "message": "Lüftungszone nicht gefunden."
+    },
+    "zone_not_loaded": {
+      "message": "Lüftungszone ist nicht geladen."
+    }
+  },
+  "services": {
+    "set_time_constant": {
+      "name": "Zeitkonstante setzen",
+      "description": "Gelerntes einer Zone von Hand korrigieren.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Zone",
+          "description": "Die Lüftungszone."
+        },
+        "time_constant": {
+          "name": "Zeitkonstante",
+          "description": "Neue Zeitkonstante der Zone in Minuten."
+        },
+        "runs": {
+          "name": "Lernläufe",
+          "description": "Optional die Zahl der Lernläufe setzen."
+        }
+      }
+    },
+    "reset_learning": {
+      "name": "Lernen zurücksetzen",
+      "description": "Alle gelernten Zeitkonstanten einer Zone vergessen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Zone",
+          "description": "Die Lüftungszone."
+        },
+        "time_constant": {
+          "name": "Startwert",
+          "description": "Zeitkonstante in Minuten, mit der neu begonnen wird."
+        }
+      }
+    }
+  }
+}

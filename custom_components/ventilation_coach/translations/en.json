@@ -1,0 +1,208 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "New ventilation zone",
+        "description": "Group all rooms that share one air volume into one zone.",
+        "data": {
+          "name": "Zone name",
+          "windows": "Window contacts",
+          "humidity_sensors": "Humidity sensors",
+          "temperature_sensors": "Temperature sensors",
+          "weather": "Weather entity",
+          "outdoor_dew_point_sensor": "Outdoor dew point sensor (optional)",
+          "outdoor_temperature_sensor": "Outdoor temperature sensor (optional)",
+          "initial_time_constant": "Initial time constant",
+          "initial_runs": "Learning runs so far"
+        },
+        "data_description": {
+          "name": "A zone is one connected air volume, e.g. living room with open kitchen.",
+          "windows": "All windows of the zone. Leave out inner doors.",
+          "humidity_sensors": "All humidity sensors of the zone; they are averaged.",
+          "temperature_sensors": "All temperature sensors of the zone; they are averaged.",
+          "weather": "Provides outdoor dew point and temperature.",
+          "outdoor_dew_point_sensor": "Overrides the weather entity's dew point.",
+          "outdoor_temperature_sensor": "Overrides the weather entity's temperature.",
+          "initial_time_constant": "How fast the air is exchanged (minutes). Take it over from an existing setup or keep 60.",
+          "initial_runs": "How many airings the initial time constant is based on (affects learning weight)."
+        }
+      }
+    },
+    "error": {
+      "no_windows": "Select at least one window contact.",
+      "no_humidity": "Select at least one humidity sensor.",
+      "no_temperature": "Select at least one temperature sensor.",
+      "no_outdoor": "Select a weather entity or an outdoor dew point sensor."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zone settings",
+        "data": {
+          "windows": "Window contacts",
+          "humidity_sensors": "Humidity sensors",
+          "temperature_sensors": "Temperature sensors",
+          "weather": "Weather entity",
+          "outdoor_dew_point_sensor": "Outdoor dew point sensor (optional)",
+          "outdoor_temperature_sensor": "Outdoor temperature sensor (optional)",
+          "open_delay": "Open delay",
+          "min_gap": "Minimum humidity gap",
+          "marginal_rate": "Stop below drop rate",
+          "min_gap_fraction": "Minimum share of gap",
+          "spike_delta": "Spike guard",
+          "reminder_after": "Reminder after",
+          "settle_max": "Settling time (max)",
+          "cooldown": "Cooldown after airing"
+        },
+        "data_description": {
+          "windows": "All windows of the zone. Leave out inner doors.",
+          "humidity_sensors": "All humidity sensors of the zone; they are averaged.",
+          "temperature_sensors": "All temperature sensors of the zone; they are averaged.",
+          "weather": "Provides outdoor dew point and temperature.",
+          "outdoor_dew_point_sensor": "Overrides the weather entity's dew point.",
+          "outdoor_temperature_sensor": "Overrides the weather entity's temperature.",
+          "open_delay": "A window must be open this long before airing starts.",
+          "min_gap": "Below this gap to the equilibrium humidity, airing only means fresh air (5 min).",
+          "marginal_rate": "Airing ends when the expected drop falls below this many points per minute.",
+          "min_gap_fraction": "Air at least until this share of the gap is closed (0.2 = 20 %).",
+          "spike_delta": "Ignore a humidity sensor that is this far above the driest one (e.g. cooking). 0 = off.",
+          "reminder_after": "Fire a reminder event if windows are still open this long after 'close now'.",
+          "settle_max": "After closing, wait for the first humidity report, at most this long, then learn.",
+          "cooldown": "'Airing worthwhile' stays off this long after airing."
+        }
+      }
+    },
+    "error": {
+      "no_windows": "Select at least one window contact.",
+      "no_humidity": "Select at least one humidity sensor.",
+      "no_temperature": "Select at least one temperature sensor.",
+      "no_outdoor": "Select a weather entity or an outdoor dew point sensor."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "idle": "Idle",
+          "airing": "Airing",
+          "close_now": "Close now",
+          "settling": "Settling"
+        },
+        "state_attributes": {
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "air_exchanged": "Air exchanged",
+              "room_cooling": "Room cooling down",
+              "humidity_stalled": "Humidity hardly drops",
+              "time_reached": "Airing time reached"
+            }
+          },
+          "hint": {
+            "name": "Hint",
+            "state": {
+              "humid_outside": "Humid outside, hardly helps",
+              "slow_exchange": "Slow exchange – open windows fully"
+            }
+          },
+          "progress": {
+            "name": "Progress"
+          },
+          "open_windows": {
+            "name": "Open windows"
+          },
+          "learning": {
+            "name": "Still learning"
+          }
+        }
+      },
+      "humidity": {
+        "name": "Humidity"
+      },
+      "equilibrium_humidity": {
+        "name": "Equilibrium humidity"
+      },
+      "humidity_gap": {
+        "name": "Humidity gap"
+      },
+      "airing_duration": {
+        "name": "Airing duration"
+      },
+      "expected_humidity": {
+        "name": "Expected humidity"
+      },
+      "airing_end": {
+        "name": "Airing end"
+      },
+      "last_airing": {
+        "name": "Last airing"
+      },
+      "time_constant": {
+        "name": "Time constant"
+      }
+    },
+    "binary_sensor": {
+      "close_now": {
+        "name": "Close now",
+        "state_attributes": {
+          "reason": {
+            "name": "Reason",
+            "state": {
+              "air_exchanged": "Air exchanged",
+              "room_cooling": "Room cooling down",
+              "humidity_stalled": "Humidity hardly drops",
+              "time_reached": "Airing time reached"
+            }
+          }
+        }
+      },
+      "airing_worthwhile": {
+        "name": "Airing worthwhile"
+      }
+    }
+  },
+  "exceptions": {
+    "zone_not_found": {
+      "message": "Ventilation zone not found."
+    },
+    "zone_not_loaded": {
+      "message": "Ventilation zone is not loaded."
+    }
+  },
+  "services": {
+    "set_time_constant": {
+      "name": "Set time constant",
+      "description": "Manually correct what a zone has learned.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Zone",
+          "description": "The ventilation zone."
+        },
+        "time_constant": {
+          "name": "Time constant",
+          "description": "New zone time constant in minutes."
+        },
+        "runs": {
+          "name": "Learning runs",
+          "description": "Optionally set the number of learning runs."
+        }
+      }
+    },
+    "reset_learning": {
+      "name": "Reset learning",
+      "description": "Forget all learned time constants of a zone.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Zone",
+          "description": "The ventilation zone."
+        },
+        "time_constant": {
+          "name": "Start value",
+          "description": "Time constant to start from in minutes."
+        }
+      }
+    }
+  }
+}
