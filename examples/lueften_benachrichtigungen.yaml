@@ -11,8 +11,8 @@ max: 10
 triggers:
   - trigger: state
     entity_id:
-      - sensor.wohnbereich_status
-      - sensor.schlafzimmer_status
+      - sensor.living_area_ventilation_status
+      - sensor.bedroom_ventilation_status
     to: null
     id: status
   - trigger: time_pattern
@@ -29,8 +29,8 @@ triggers:
     id: finished
 variables:
   zonen:
-    - sensor.wohnbereich_status
-    - sensor.schlafzimmer_status
+    - sensor.living_area_ventilation_status
+    - sensor.bedroom_ventilation_status
   empfaenger:
     - person: person.finn
       notify: notify.mobile_app_pixel_7
