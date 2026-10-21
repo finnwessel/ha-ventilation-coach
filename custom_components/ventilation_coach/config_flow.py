@@ -53,15 +53,12 @@ def _filter(domain: str, *device_classes: str) -> selector.EntityFilterSelectorC
 
 
 def _number(minimum: float, maximum: float, step: float, unit: str | None = None) -> selector.NumberSelector:
-    return selector.NumberSelector(
-        selector.NumberSelectorConfig(
-            min=minimum,
-            max=maximum,
-            step=step,
-            unit_of_measurement=unit,
-            mode=selector.NumberSelectorMode.BOX,
-        )
+    config = selector.NumberSelectorConfig(
+        min=minimum, max=maximum, step=step, mode=selector.NumberSelectorMode.BOX
     )
+    if unit is not None:  # None is rejected by the selector schema
+        config["unit_of_measurement"] = unit
+    return selector.NumberSelector(config)
 
 
 def _sensors_schema(defaults: dict[str, Any]) -> dict[vol.Marker, Any]:
