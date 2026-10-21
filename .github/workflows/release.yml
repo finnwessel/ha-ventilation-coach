@@ -1,10 +1,14 @@
 name: Release
 
-# Push a tag like v0.1.0 → GitHub release that HACS installs from.
+# Bump "version" in manifest.json and push to main → tag v<version> and a
+# GitHub release are created, which HACS installs from.
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths:
+      - custom_components/ventilation_coach/manifest.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,10 +18,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check manifest version matches tag
-        run: |
-          manifest=$(jq -r .version custom_components/ventilation_coach/manifest.json)
-          test "v$manifest" = "${GITHUB_REF_NAME}" || { echo "manifest $manifest != tag ${GITHUB_REF_NAME}"; exit 1; }
-      - uses: softprops/action-gh-release@v2
         with:
+          fetch-depth: 0
+      - name: Read version
+        id: version
+        run: |
+          version=$(jq -r .version custom_components/ventilation_coach/manifest.json)
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          if git rev-parse "v$version" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create release
+        if: steps.version.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
